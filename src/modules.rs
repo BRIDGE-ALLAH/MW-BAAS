@@ -66,7 +66,13 @@ impl Initializer for ModulesInitializer {
         let mut host = AsyncModuleHost::new(registry, context);
         if let Err(error) = host.start().await {
             if let Err(cleanup_error) = host.stop().await {
-                tracing::error!(%cleanup_error, "MoonWitness module rollback retry failed");
+                // Preserve the host so a later shutdown call can retry cleanup.
+                // Dropping it here would lose the only handles to partially
+                // activated modules that failed their rollback.
+                app_context.shared_store.insert(Arc::new(
+                    tokio::sync::Mutex::new(host),
+                ));
+                tracing::error!(%cleanup_error, "MoonWitness module rollback remains pending");
             }
             return Err(Error::string(&error.to_string()));
         }
