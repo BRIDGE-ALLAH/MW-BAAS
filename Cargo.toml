@@ -226,7 +226,7 @@ tracing-appender = { version = "0.2.3", default-features = false }
 
 duct = { workspace = true }
 # Optional static module kernel supplied by MW-ORM; activated by `mw-modules`.
-moonwitness-module = { git = "https://github.com/BRIDGE-ALLAH/MW-ORM", rev = "cfeeba8eb4a3e19f5ff42afc7bb07ff9c9674ba0", optional = true }
+moonwitness-module = { version = "0.1.0", git = "https://github.com/BRIDGE-ALLAH/MW-ORM", rev = "cfeeba8eb4a3e19f5ff42afc7bb07ff9c9674ba0", optional = true }
 shlex = "2.0.1"
 
 tower-http = { workspace = true }
