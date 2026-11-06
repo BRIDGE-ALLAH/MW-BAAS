@@ -49,10 +49,12 @@ impl Initializer for ModulesInitializer {
     fn name(&self) -> String { "moonwitness-modules".to_owned() }
 
     async fn before_run(&self, app_context: &AppContext) -> Result<()> {
-        let registry = self.registry.lock()
-            .map_err(|_| Error::string("MoonWitness module registry lock is poisoned"))?
-            .take()
-            .ok_or_else(|| Error::string("MoonWitness module initializer has already run"))?;
+        let registry = {
+            let mut registry = self.registry.lock()
+                .map_err(|_| Error::string("MoonWitness module registry lock is poisoned"))?;
+            registry.take()
+                .ok_or_else(|| Error::string("MoonWitness module initializer has already run"))?
+        };
 
         let mut services = ServiceRegistryBuilder::new();
         services.register(app_context.db.clone())
