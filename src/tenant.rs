@@ -64,6 +64,128 @@ impl TenantId {
     pub fn as_str(&self) -> &str {
         &self.0
     }
+
+    #[cfg(feature = "db-sqlite")]
+    #[tokio::test]
+    async fn middleware_injects_the_database_resolved_for_the_verified_tenant() {
+        use axum::{
+            Extension, Router,
+            body::to_bytes,
+            http::StatusCode,
+            middleware::from_fn_with_state,
+            routing::get,
+        };
+        use sea_orm::Database;
+        use tower::ServiceExt;
+
+        struct TestAuthenticator;
+
+        #[async_trait]
+        impl TenantRequestAuthenticator for TestAuthenticator {
+            async fn authenticate(
+                &self,
+                _request: &TenantRequestContext,
+            ) -> Result<VerifiedTenantPrincipal> {
+                VerifiedTenantPrincipal::from_verified_claims("tenant-a", "subject-1")
+            }
+        }
+
+        struct TestProvider {
+            connection: DatabaseConnection,
+        }
+
+        #[async_trait]
+        impl TenantDatabaseProvider for TestProvider {
+            async fn resolve(
+                &self,
+                principal: &VerifiedTenantPrincipal,
+            ) -> Result<TenantDatabase> {
+                let tenant_id = TenantId::parse(principal.tenant_id().as_str())?;
+                Ok(TenantDatabase::new(tenant_id, self.connection.clone()))
+            }
+        }
+
+        let connection = Database::connect("sqlite::memory:")
+            .await
+            .expect("connect test database");
+        let state = TenantMiddlewareState::new(
+            Arc::new(TestAuthenticator),
+            Arc::new(TestProvider { connection }),
+        );
+        let app = Router::new()
+            .route(
+                "/tenant",
+                get(|Extension(database): Extension<TenantDatabase>| async move {
+                    database.tenant_id().as_str().to_owned()
+                }),
+            )
+            .layer(from_fn_with_state(state, tenant_database_middleware));
+
+        let response = app
+            .oneshot(Request::builder().uri("/tenant").body(Body::empty()).unwrap())
+            .await
+            .expect("request should complete");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("read response body");
+        assert_eq!(&body[..], b"tenant-a");
+    }
+
+    #[cfg(feature = "db-sqlite")]
+    #[tokio::test]
+    async fn middleware_fails_closed_when_authentication_fails() {
+        use axum::{
+            Router,
+            http::StatusCode,
+            middleware::from_fn_with_state,
+            routing::get,
+        };
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use tower::ServiceExt;
+
+        struct DenyAuthenticator;
+
+        #[async_trait]
+        impl TenantRequestAuthenticator for DenyAuthenticator {
+            async fn authenticate(
+                &self,
+                _request: &TenantRequestContext,
+            ) -> Result<VerifiedTenantPrincipal> {
+                Err(Error::Unauthorized("authentication denied".to_owned()))
+            }
+        }
+
+        struct MustNotResolve(Arc<AtomicUsize>);
+
+        #[async_trait]
+        impl TenantDatabaseProvider for MustNotResolve {
+            async fn resolve(
+                &self,
+                _principal: &VerifiedTenantPrincipal,
+            ) -> Result<TenantDatabase> {
+                self.0.fetch_add(1, Ordering::SeqCst);
+                Err(Error::Unauthorized("provider must not be called".to_owned()))
+            }
+        }
+
+        let provider_calls = Arc::new(AtomicUsize::new(0));
+        let state = TenantMiddlewareState::new(
+            Arc::new(DenyAuthenticator),
+            Arc::new(MustNotResolve(Arc::clone(&provider_calls))),
+        );
+        let app = Router::new()
+            .route("/tenant", get(|| async { "should not reach handler" }))
+            .layer(from_fn_with_state(state, tenant_database_middleware));
+
+        let response = app
+            .oneshot(Request::builder().uri("/tenant").body(Body::empty()).unwrap())
+            .await
+            .expect("request should complete");
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+        assert_eq!(provider_calls.load(Ordering::SeqCst), 0);
+    }
+
 }
 
 /// Authenticated tenant and subject identity passed to a tenant DB provider.
