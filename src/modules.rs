@@ -88,5 +88,8 @@ pub async fn shutdown(app_context: &AppContext) -> Result<()> {
     let Some(host) = runtime(app_context) else { return Ok(()); };
     host.lock().await.stop().await
         .map_err(|error| Error::string(&error.to_string()))?;
+    // Keep the host registered when shutdown fails so callers can retry.
+    // Once every module has stopped, remove the stale runtime handle.
+    app_context.shared_store.remove::<Arc<tokio::sync::Mutex<AsyncModuleHost>>>();
     Ok(())
 }
