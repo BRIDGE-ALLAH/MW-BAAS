@@ -9,10 +9,11 @@
 //! database. Tenant-aware handlers must use the database returned by a
 //! TenantDatabaseProvider and must not fall back to the global pool.
 //!
-//! This module currently defines the safe integration contract only. It does
-//! not ship a tenant registry, secret-manager adapter, connection-pool manager,
-//! request middleware, provisioning service, or migration orchestrator. Do not
-//! treat enabling this module as enabling production tenant isolation.
+//! This module provides tenant identity types, a provider contract, and opt-in
+//! Axum request middleware. It does not ship a tenant registry, token/session
+//! verifier, secret-manager adapter, connection-pool manager/provider,
+//! provisioning service, background-job propagation, or migration orchestrator.
+//! Do not treat enabling this module as enabling production tenant isolation.
 
 use std::sync::Arc;
 
