@@ -34,6 +34,20 @@ Never run two ORMs as competing owners of the same models, schema, migration his
 - Cargo patches crates.io `sea-orm` globally so `sea-orm-migration` resolves the same source.
 - The module kernel is re-exported as `loco_rs::modules` when `mw-modules` is enabled. It currently offers typed manifests, deterministic dependency planning, a static registry, and synchronous prepare/activate/deactivate hooks. It does **not** run module migrations, manage persistence, or provide tenant isolation.
 
+## Migration ownership decision for MW-BAAS
+
+For applications built on MW-BAAS, the existing Loco/SeaORM migration runner remains the **single schema-migration owner** during this integration. The application migration crate and its migration-history table are authoritative. MW-ORM supplies the ORM and migration primitives consumed by that runner; the experimental `moonwitness-module` kernel does not execute migrations and must not introduce a second migration-history table or independently apply module schema changes.
+
+Consequences:
+
+- A BAAS application runs migrations through its existing Loco migration entry point only.
+- ORM and migration crates must resolve the same patched MW-ORM `sea-orm` source.
+- Module activation must not mutate schema. A module that requires schema changes is not eligible for production activation until a reviewed migration is added to the application's canonical migration crate and deployed through the normal migration pipeline.
+- Migration ordering, locking, transactional behavior, rollback policy, and recovery remain governed by the application's existing SeaORM migration runner.
+- Any future module-owned migration feature requires a separate design that delegates to this single owner; it must not create a competing runner or history.
+
+This is the initial safe integration decision, not a claim that migration execution has already been validated against the pinned MW-ORM revision. That still requires a real downstream fixture and database-backed CI.
+
 ## Staged integration
 
 ### Stage 0 — Baseline inventory
