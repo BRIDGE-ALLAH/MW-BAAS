@@ -484,7 +484,13 @@ pub trait Hooks: Send {
         serve_router(
             app,
             serve_params,
-            Box::pin(async move { Self::on_shutdown(&ctx).await }),
+            Box::pin(async move {
+                Self::on_shutdown(&ctx).await;
+                #[cfg(feature = "moonwitness-modules")]
+                if let Err(error) = crate::modules::shutdown(&ctx).await {
+                    tracing::error!(%error, "MoonWitness module shutdown failed");
+                }
+            }),
         )
         .await
     }
