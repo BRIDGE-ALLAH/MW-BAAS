@@ -12,6 +12,10 @@ Use **one separately provisioned database per tenant** as the default isolation 
 
 The application must resolve an authenticated tenant identity through a trusted tenant registry/control plane and select that tenant's database configuration. Tenant identity supplied by an untrusted client must never directly select an arbitrary database or connection string.
 
+## Existing code assessment
+
+The inherited `MultiDb` helper and `MultiDbInitializer` are not a tenant-isolation implementation. They load a static map of named database connections from application configuration and expose it through an Axum extension. They do not authenticate or resolve tenant identity, consult a trusted tenant registry, bind a request/job to a tenant-owned database, manage tenant lifecycle, or enforce cross-tenant authorization. Their presence must not be treated as satisfying this ADR. Do not pass untrusted tenant input directly to `MultiDb::get` or expose its full connection map to tenant-scoped handlers.
+
 ## Required architecture
 
 1. **Control plane / tenant registry**
