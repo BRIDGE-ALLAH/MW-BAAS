@@ -66,7 +66,6 @@ impl TenantId {
     }
 }
 
-
 /// Authenticated tenant and subject identity passed to a tenant DB provider.
 ///
 /// Construct this value only after validating the caller's authentication and
@@ -396,14 +395,17 @@ mod tests {
             .layer(from_fn_with_state(state, tenant_database_middleware));
 
         let response = app
-            .oneshot(Request::builder().uri("/tenant").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/tenant")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .expect("request should complete");
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         assert_eq!(provider_calls.load(Ordering::SeqCst), 0);
     }
-
-
 
     #[cfg(feature = "db-sqlite")]
     #[tokio::test]
@@ -438,10 +440,7 @@ mod tests {
 
         #[async_trait]
         impl TenantDatabaseProvider for MapProvider {
-            async fn resolve(
-                &self,
-                principal: &VerifiedTenantPrincipal,
-            ) -> Result<TenantDatabase> {
+            async fn resolve(&self, principal: &VerifiedTenantPrincipal) -> Result<TenantDatabase> {
                 let tenant_id = principal.tenant_id().as_str();
                 let connection = self
                     .0
