@@ -105,6 +105,27 @@ The existing Loco/SeaORM migration runner remains the single schema-migration ow
 
 This decision does not make the current `multi-tenancy` feature alias a security boundary. Production use remains blocked until tenant provisioning, distinct least-privilege credentials, scoped pool management, migration orchestration, and cross-tenant negative tests are implemented and reviewed.
 
+## Tenant database routing API (initial contract)
+
+The `with-db` build now exposes `loco_rs::tenant` with:
+
+- `TenantId`: syntax-validated stable tenant identifier. Parsing is not authentication and does not prove that a tenant is active.
+- `VerifiedTenantPrincipal`: explicit trust-boundary marker for an authenticated subject and tenant claim. Construct it only after token verification and active membership validation against the trusted registry.
+- `TenantDatabaseProvider`: application-owned async adapter that resolves a verified principal to a dedicated tenant database.
+- `TenantDatabase`: a handle that carries the tenant ID alongside its SeaORM connection.
+
+This is an integration seam, not a completed runtime. No default provider is shipped. The framework does not yet supply a tenant registry, identity verifier, secrets manager, bounded pool cache, Axum request middleware, background-job propagation, provisioning lifecycle, per-tenant migration orchestration, or tenant-aware backup/restore. The ordinary global `AppContext::db` remains available for existing single-tenant applications; tenant-aware handlers must not use it as a fallback.
+
+Before using the API in an application, implement and test an adapter that:
+1. verifies the authentication token and derives the subject and tenant claim from trusted claims;
+2. checks tenant status and membership against a trusted registry;
+3. maps the immutable tenant ID to a secret reference and approved database target (never accept a client-supplied URI);
+4. creates or retrieves a dedicated pool using an immutable database identity as the cache key, with bounded pool count/idle eviction and distinct least-privilege credentials;
+5. injects the resulting TenantDatabase into request/job context only after successful resolution, failing closed on all errors;
+6. applies the canonical Loco/SeaORM migration runner to each tenant database and records per-tenant outcomes.
+
+The new `src/tenant.rs` unit tests cover tenant-ID syntax and principal input validation only. They are not cross-tenant isolation tests and do not prove the provider implementation. Multi-tenant production remains blocked until a real downstream fixture exercises two isolated databases, concurrent requests, pool reuse, transactions, raw SQL, background jobs, exports, admin access, migration failure/retry, backup/restore, and offboarding.
+
 ## Security and integrity requirements
 
 - Tenant isolation must cover queries, joins, raw SQL, background jobs, exports, and administrative paths.
