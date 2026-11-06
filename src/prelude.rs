@@ -136,3 +136,6 @@ mod tests {
         assert_eq!(6_u64.div(2), 3);
     }
 }
+
+#[cfg(feature = "moonwitness-modules")]
+pub use crate::modules::ModulesInitializer;
