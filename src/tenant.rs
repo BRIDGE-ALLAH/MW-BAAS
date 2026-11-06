@@ -67,118 +67,6 @@ impl TenantId {
 
 
 
-    #[cfg(feature = "db-sqlite")]
-    #[tokio::test]
-    async fn separate_tenant_databases_do_not_share_rows() {
-        use std::collections::HashMap;
-
-        use axum::{
-            Extension, Router,
-            body::to_bytes,
-            http::StatusCode,
-            middleware::from_fn_with_state,
-            routing::get,
-        };
-        use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseBackend, Statement};
-        use tower::ServiceExt;
-
-        struct HeaderTestAuthenticator;
-
-        #[async_trait]
-        impl TenantRequestAuthenticator for HeaderTestAuthenticator {
-            async fn authenticate(
-                &self,
-                request: &TenantRequestContext,
-            ) -> Result<VerifiedTenantPrincipal> {
-                let tenant_id = request
-                    .headers()
-                    .get("x-test-tenant")
-                    .and_then(|value| value.to_str().ok())
-                    .ok_or_else(|| Error::Unauthorized("missing test tenant".to_owned()))?;
-                VerifiedTenantPrincipal::from_verified_claims(tenant_id, "test-subject")
-            }
-        }
-
-        struct MapProvider(HashMap<String, DatabaseConnection>);
-
-        #[async_trait]
-        impl TenantDatabaseProvider for MapProvider {
-            async fn resolve(
-                &self,
-                principal: &VerifiedTenantPrincipal,
-            ) -> Result<TenantDatabase> {
-                let tenant_id = principal.tenant_id().as_str();
-                let connection = self
-                    .0
-                    .get(tenant_id)
-                    .ok_or_else(|| Error::Unauthorized("tenant not registered".to_owned()))?;
-                Ok(TenantDatabase::new(
-                    TenantId::parse(tenant_id)?,
-                    connection.clone(),
-                ))
-            }
-        }
-
-        async fn isolated_db(marker: &str) -> DatabaseConnection {
-            let mut options = ConnectOptions::new("sqlite::memory:");
-            options.max_connections(1);
-            let db = Database::connect(options).await.expect("connect sqlite");
-            db.execute_unprepared("CREATE TABLE tenant_marker (value TEXT NOT NULL)")
-                .await
-                .expect("create marker table");
-            db.execute_unprepared(&format!(
-                "INSERT INTO tenant_marker (value) VALUES ('{marker}')"
-            ))
-            .await
-            .expect("insert marker");
-            db
-        }
-
-        let mut databases = HashMap::new();
-        databases.insert("tenant-a".to_owned(), isolated_db("only-a").await);
-        databases.insert("tenant-b".to_owned(), isolated_db("only-b").await);
-        let state = TenantMiddlewareState::new(
-            Arc::new(HeaderTestAuthenticator),
-            Arc::new(MapProvider(databases)),
-        );
-        let app = Router::new()
-            .route(
-                "/tenant",
-                get(|Extension(database): Extension<TenantDatabase>| async move {
-                    let row = database
-                        .connection()
-                        .query_one(Statement::from_string(
-                            DatabaseBackend::Sqlite,
-                            "SELECT value FROM tenant_marker",
-                        ))
-                        .await
-                        .expect("query tenant database")
-                        .expect("tenant marker exists");
-                    row.try_get::<String>("", "value")
-                        .expect("read tenant marker")
-                }),
-            )
-            .layer(from_fn_with_state(state, tenant_database_middleware));
-
-        for (tenant, expected) in [("tenant-a", "only-a"), ("tenant-b", "only-b")] {
-            let response = app
-                .clone()
-                .oneshot(
-                    Request::builder()
-                        .uri("/tenant")
-                        .header("x-test-tenant", tenant)
-                        .body(Body::empty())
-                        .unwrap(),
-                )
-                .await
-                .expect("request should complete");
-            assert_eq!(response.status(), StatusCode::OK);
-            let body = to_bytes(response.into_body(), usize::MAX)
-                .await
-                .expect("read response body");
-            assert_eq!(&body[..], expected.as_bytes());
-        }
-    }
 
 }
 
@@ -516,6 +404,121 @@ mod tests {
             .expect("request should complete");
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         assert_eq!(provider_calls.load(Ordering::SeqCst), 0);
+    }
+
+
+
+    #[cfg(feature = "db-sqlite")]
+    #[tokio::test]
+    async fn separate_tenant_databases_do_not_share_rows() {
+        use std::collections::HashMap;
+
+        use axum::{
+            Extension, Router,
+            body::to_bytes,
+            http::StatusCode,
+            middleware::from_fn_with_state,
+            routing::get,
+        };
+        use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseBackend, Statement};
+        use tower::ServiceExt;
+
+        struct HeaderTestAuthenticator;
+
+        #[async_trait]
+        impl TenantRequestAuthenticator for HeaderTestAuthenticator {
+            async fn authenticate(
+                &self,
+                request: &TenantRequestContext,
+            ) -> Result<VerifiedTenantPrincipal> {
+                let tenant_id = request
+                    .headers()
+                    .get("x-test-tenant")
+                    .and_then(|value| value.to_str().ok())
+                    .ok_or_else(|| Error::Unauthorized("missing test tenant".to_owned()))?;
+                VerifiedTenantPrincipal::from_verified_claims(tenant_id, "test-subject")
+            }
+        }
+
+        struct MapProvider(HashMap<String, DatabaseConnection>);
+
+        #[async_trait]
+        impl TenantDatabaseProvider for MapProvider {
+            async fn resolve(
+                &self,
+                principal: &VerifiedTenantPrincipal,
+            ) -> Result<TenantDatabase> {
+                let tenant_id = principal.tenant_id().as_str();
+                let connection = self
+                    .0
+                    .get(tenant_id)
+                    .ok_or_else(|| Error::Unauthorized("tenant not registered".to_owned()))?;
+                Ok(TenantDatabase::new(
+                    TenantId::parse(tenant_id)?,
+                    connection.clone(),
+                ))
+            }
+        }
+
+        async fn isolated_db(marker: &str) -> DatabaseConnection {
+            let mut options = ConnectOptions::new("sqlite::memory:");
+            options.max_connections(1);
+            let db = Database::connect(options).await.expect("connect sqlite");
+            db.execute_unprepared("CREATE TABLE tenant_marker (value TEXT NOT NULL)")
+                .await
+                .expect("create marker table");
+            db.execute_unprepared(&format!(
+                "INSERT INTO tenant_marker (value) VALUES ('{marker}')"
+            ))
+            .await
+            .expect("insert marker");
+            db
+        }
+
+        let mut databases = HashMap::new();
+        databases.insert("tenant-a".to_owned(), isolated_db("only-a").await);
+        databases.insert("tenant-b".to_owned(), isolated_db("only-b").await);
+        let state = TenantMiddlewareState::new(
+            Arc::new(HeaderTestAuthenticator),
+            Arc::new(MapProvider(databases)),
+        );
+        let app = Router::new()
+            .route(
+                "/tenant",
+                get(|Extension(database): Extension<TenantDatabase>| async move {
+                    let row = database
+                        .connection()
+                        .query_one(Statement::from_string(
+                            DatabaseBackend::Sqlite,
+                            "SELECT value FROM tenant_marker",
+                        ))
+                        .await
+                        .expect("query tenant database")
+                        .expect("tenant marker exists");
+                    row.try_get::<String>("", "value")
+                        .expect("read tenant marker")
+                }),
+            )
+            .layer(from_fn_with_state(state, tenant_database_middleware));
+
+        for (tenant, expected) in [("tenant-a", "only-a"), ("tenant-b", "only-b")] {
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri("/tenant")
+                        .header("x-test-tenant", tenant)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .expect("request should complete");
+            assert_eq!(response.status(), StatusCode::OK);
+            let body = to_bytes(response.into_body(), usize::MAX)
+                .await
+                .expect("read response body");
+            assert_eq!(&body[..], expected.as_bytes());
+        }
     }
 
 
