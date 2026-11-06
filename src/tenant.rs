@@ -14,7 +14,16 @@
 //! request middleware, provisioning service, or migration orchestrator. Do not
 //! treat enabling this module as enabling production tenant isolation.
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
+use axum::{
+    body::Body,
+    extract::State,
+    http::{HeaderMap, Method, Request, Uri},
+    middleware::Next,
+    response::Response,
+};
 use sea_orm::DatabaseConnection;
 
 use crate::{Error, Result};
@@ -134,6 +143,94 @@ impl TenantDatabase {
     pub fn connection(&self) -> &DatabaseConnection {
         &self.connection
     }
+}
+
+/// Request metadata made available to the application's authentication adapter.
+#[derive(Clone, Debug)]
+pub struct TenantRequestContext {
+    headers: HeaderMap,
+    method: Method,
+    uri: Uri,
+}
+
+impl TenantRequestContext {
+    /// Borrow request headers for token/session verification.
+    #[must_use]
+    pub fn headers(&self) -> &HeaderMap {
+        &self.headers
+    }
+
+    /// Borrow the HTTP method.
+    #[must_use]
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
+    /// Borrow the request URI.
+    #[must_use]
+    pub fn uri(&self) -> &Uri {
+        &self.uri
+    }
+}
+
+/// Authenticates the request and validates its tenant membership.
+///
+/// Implementations must derive identity from verified credentials, not from an
+/// untrusted tenant header, path segment, query parameter, or host name alone.
+#[async_trait]
+pub trait TenantRequestAuthenticator: Send + Sync {
+    /// Authenticate a request and return its verified tenant principal.
+    ///
+    /// # Errors
+    ///
+    /// Returns an authorization error when credentials or tenant membership
+    /// are missing, invalid, expired, or inactive.
+    async fn authenticate(
+        &self,
+        request: &TenantRequestContext,
+    ) -> Result<VerifiedTenantPrincipal>;
+}
+
+/// Dependencies required by the tenant database request middleware.
+#[derive(Clone)]
+pub struct TenantMiddlewareState {
+    authenticator: Arc<dyn TenantRequestAuthenticator>,
+    provider: Arc<dyn TenantDatabaseProvider>,
+}
+
+impl TenantMiddlewareState {
+    /// Create middleware state from application-owned auth and database adapters.
+    #[must_use]
+    pub fn new(
+        authenticator: Arc<dyn TenantRequestAuthenticator>,
+        provider: Arc<dyn TenantDatabaseProvider>,
+    ) -> Self {
+        Self {
+            authenticator,
+            provider,
+        }
+    }
+}
+
+/// Authenticate, resolve, and inject a tenant-scoped database for one request.
+///
+/// Wire this middleware onto tenant-only routes using Axum's
+/// from_fn_with_state. Routes outside that layer remain ordinary single-tenant
+/// routes and must not be assumed to have a tenant database extension.
+pub async fn tenant_database_middleware(
+    State(state): State<TenantMiddlewareState>,
+    mut request: Request<Body>,
+    next: Next,
+) -> Result<Response> {
+    let context = TenantRequestContext {
+        headers: request.headers().clone(),
+        method: request.method().clone(),
+        uri: request.uri().clone(),
+    };
+    let principal = state.authenticator.authenticate(&context).await?;
+    let database = state.provider.resolve(&principal).await?;
+    request.extensions_mut().insert(database);
+    Ok(next.run(request).await)
 }
 
 /// Resolves an authenticated tenant principal to its dedicated database.
