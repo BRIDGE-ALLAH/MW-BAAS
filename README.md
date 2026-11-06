@@ -1,117 +1,120 @@
- <div align="center">
+# MW-BAAS
 
-   <img src="https://github.com/loco-rs/loco/assets/83390/992d215a-3cd3-42ee-a1c7-de9fd25a5bac"/>
+### The Infrastructure Behind Every Witness.
+**A modular backend platform for the MoonWitness ecosystem.**
 
-   <h1>Welcome to Loco</h1>
+*One Foundation. Many Applications. Accountable by Design.*
 
-   <h3>
-   <!-- <snip id="description" inject_from="yaml"> -->
-🚂 Loco is Rust on Rails.
-<!--</snip> -->
-   </h3>
+MW-BAAS is the backend platform intended to power products across the MoonWitness ecosystem. It provides application-facing services—HTTP APIs, identity and access, background work, storage, caching, notifications, integrations, and operations—while relying on **MoonWitness ORM (MW-ORM)** for the reusable relational and modular data foundation.
 
-   [![crate](https://img.shields.io/crates/v/loco-rs.svg)](https://crates.io/crates/loco-rs)
-   [![docs](https://docs.rs/loco-rs/badge.svg)](https://docs.rs/loco-rs)
-   [![Discord channel](https://img.shields.io/badge/discord-Join-us)](https://discord.gg/fTvyBzwKS8)
+MW-BAAS helps applications share reliable infrastructure without forcing them to share product logic.
 
- </div>
+> The Moon Watches. The Record Remembers. The Evidence Remains Inspectable.
 
-English · [中文](./README-zh_CN.md) · [Français](./README.fr.md) · [Portuguese (Brazil)](./README-pt_BR.md) ・ [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Русский](./README.ru.md) · [Español](./README.es.md) · [Vietnamese](./README.vi.md) · [العربية](./README.ar.md) · [Bahasa Indonesia](./README.id.md)
+This principle comes from the MoonWitness vision: preserve original material, trace claims to their sources, distinguish evidence from interpretation, respect consent and rights, and keep consequential decisions accountable to people.
 
-## What's Loco?
+## Product identity
 
-`Loco` is strongly inspired by Rails. If you know Rails and Rust, you'll feel at home. If you only know Rails and new to Rust, you'll find Loco refreshing. We do not assume you know Rails.
+| Layer | Responsibility |
+|---|---|
+| **Empire of the Light** | Parent vision and ecosystem context |
+| **MoonWitness** | Public-facing knowledge, witness, research, and storytelling ecosystem |
+| **MW-BAAS** | Shared backend platform and application-facing services |
+| **MW-ORM** | Reusable relational engine and modular data foundation |
+| **Applications** | Independent products composed on shared contracts |
 
-For a deeper dive into how Loco works, including detailed guides, examples, and API references, check out our [documentation website](https://loco.rs).
+Applications remain responsible for their own user experience, policies, and domain decisions.
 
-## Features of Loco
+## Architecture and boundaries
 
-* `Convention Over Configuration:` Similar to Ruby on Rails, Loco emphasizes simplicity and productivity by reducing the need for boilerplate code. It uses sensible defaults, allowing developers to focus on writing business logic rather than spending time on configuration.
-
-* `Rapid Development:` Aim for high developer productivity, Loco’s design focuses on reducing boilerplate code and providing intuitive APIs, allowing developers to iterate quickly and build prototypes with minimal effort.
-
-* `ORM Integration:` Model your business with robust entities, eliminating the need to write SQL. Define relationships, validation, and custom logic directly on your entities for enhanced maintainability and scalability.
-
-* `Controllers`: Handle web requests parameters, body, validation, and render a response that is content-aware. We use Axum for the best performance, simplicity, and extensibility. Controllers also allow you to easily build middlewares, which can be used to add logic such as authentication, logging, or error handling before passing requests to the main controller actions.
-
-* `Views:` Loco can integrate with templating engines to generate dynamic HTML content from templates.
-
-* `Background Jobs:` Perform compute or I/O intensive jobs in the background with a Redis backed queue, or with threads. Implementing a worker is as simple as implementing a `perform` function for the `Worker` trait.
-
-* `Scheduler:` Simplifies the traditional, often cumbersome crontab system, making it easier and more elegant to schedule tasks or shell scripts.
-
-* `Mailers:` A mailer will deliver emails in the background using the existing loco background worker infrastructure. It will all be seamless for you.
-
-* `Storage:` In Loco Storage, we facilitate working with files through multiple operations. Storage can be in-memory, on disk, or use cloud services such as AWS S3, GCP, and Azure.
-
-* `Cache:` Loco provides an cache layer to improve application performance by storing frequently accessed data.
-
-So see more Loco features, check out our [documentation website](https://loco.rs/docs/getting-started/tour/).
-
-## Getting Started
-<!-- <snip id="quick-installation-command" inject_from="yaml" template="sh"> -->
-```sh
-cargo install loco
-cargo install sea-orm-cli # Only when DB is needed
+```text
+MoonWitness applications
+          |
+          v
+       MW-BAAS
+  APIs · Identity · Access
+  Jobs · Storage · Cache
+  Notifications · Operations
+          |
+          v
+   MW-ORM integration
+  Relational core · Entities
+  Relations · Queries · Transactions
+  Module contracts (as implemented)
+          |
+          v
+ PostgreSQL · MySQL · SQLite
 ```
-<!-- </snip> -->
 
-Now you can create your new app (choose "`SaaS` app").
+**Dependency direction:** MW-BAAS consumes MW-ORM. MW-ORM remains independently usable and must not depend on BAAS product logic.
 
-<!-- <snip id="loco-cli-new-from-template" inject_from="yaml" template="sh"> -->
-```sh
-❯ loco new
-✔ ❯ App name? · myapp
-✔ ❯ What would you like to build? · Saas App with client side rendering
-✔ ❯ Select a DB Provider · Sqlite
-✔ ❯ Select your background worker type · Async (in-process tokio async tasks)
+- **MW-ORM owns** relational primitives, entity/relation metadata, persistence, transactions, and generic module/add-on contracts as implemented.
+- **MW-BAAS owns** backend product capabilities, API composition, identity and authorization policy, tenant workflows, integrations, and deployment experience.
+- **Applications own** domain rules and product-specific data policies.
 
-🚂 Loco app generated successfully in:
-myapp/
+There must be one authoritative owner for each schema, migration history, and transaction boundary. Do not run two ORMs as competing owners of the same database state.
 
-- assets: You've selected `clientside` for your asset serving configuration.
+## Relationship with MW-ORM
 
-Next step, build your frontend:
-  $ cd frontend/
-  $ npm install && npm run build
-```
-<!-- </snip> -->
+MW-ORM is evolving independently from a SeaORM 2.0 codebase. Its architecture describes a target modular platform composed of an ORM Core, Module Kernel, and optional Add-ons. The module manifest, resolver, lifecycle coordinator, and add-on ecosystem must not be treated as shipped capabilities until implementation and tests land.
 
-Now `cd` into your `myapp` and start your app:
-<!-- <snip id="starting-the-server-command-with-output" inject_from="yaml" template="sh"> -->
-```sh
-$ cargo loco start
+MW-BAAS adopts an incremental integration policy:
 
-                      ▄     ▀
-                                ▀  ▄
-                  ▄       ▀     ▄  ▄ ▄▀
-                                    ▄ ▀▄▄
-                        ▄     ▀    ▀  ▀▄▀█▄
-                                          ▀█▄
-▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▀▀█
-██████  █████   ███ █████   ███ █████   ███ ▀█
-██████  █████   ███ █████   ▀▀▀ █████   ███ ▄█▄
-██████  █████   ███ █████       █████   ███ ████▄
-██████  █████   ███ █████   ▄▄▄ █████   ███ █████
-██████  █████   ███  ████   ███ █████   ███ ████▀
-  ▀▀▀██▄ ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀ ██▀
-      ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-                https://loco.rs
+1. Preserve the currently working database adapter while auditing compatibility.
+2. Define a narrow, versioned integration boundary; keep BAAS product behavior out of the ORM core.
+3. Integrate MW-ORM through an explicit adapter and compatibility tests.
+4. Move model and migration ownership only after an end-to-end proof.
+5. Remove duplicate persistence paths only after applications pass migration and compatibility gates.
 
-listening on port 5150
-```
-<!-- </snip> -->
+See [MW-ORM Integration Contract](docs/architecture/MW-ORM-INTEGRATION.md) and [MW-BAAS Brand Narrative](docs/brand/BRAND.md).
 
-## Powered by Loco
+## Current implementation status
 
-* [SpectralOps](https://spectralops.io) - various services powered by Loco
-  framework
-* [Nativish](https://nativi.sh) - app backend powered by Loco framework
+This repository currently contains a Loco-derived Rust framework codebase. Existing package metadata and database integration still identify Loco and SeaORM. The MW-BAAS identity and MW-ORM integration described here are the intended direction—not proof that package renaming or a production-proven MW-ORM adapter is complete.
 
-## Contributors ✨
+| Area | Status |
+|---|---|
+| Product narrative and responsibility boundaries | Documented |
+| MW-ORM integration contract | Documented; implementation pending |
+| Existing HTTP/backend foundation | Present; requires MW-BAAS-specific audit |
+| Package/crate identity migration | Not started; compatibility-sensitive |
+| MW-ORM adapter and compatibility tests | Not yet proven |
+| Production readiness | Not claimed |
 
-Thanks goes to these wonderful people:
+## Design principles
 
-<a href="https://github.com/loco-rs/loco/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=loco-rs/loco" />
-</a>
+1. **One data authority** — one canonical owner for schemas, migrations, and transaction semantics.
+2. **Explicit contracts** — versioned APIs between ORM, backend, and applications.
+3. **Modularity by composition** — optional capabilities do not become mandatory dependencies.
+4. **Human accountability** — preserve provenance and auditability where records or research require it.
+5. **Privacy and consent** — collect and expose only authorized data.
+6. **Secure by default** — deny by default, validate inputs, isolate tenants, and test bypass paths.
+7. **Observable operations** — logs, metrics, traces, health checks, actionable diagnostics.
+8. **Honest capability claims** — distinguish implementation from proposals and roadmap items.
+
+## Roadmap and acceptance gates
+
+- **Foundation:** repository, license, dependency, and CI audit.
+- **Identity:** consistent MW-BAAS naming, documentation, package migration plan.
+- **ORM bridge:** pinned MW-ORM revision, adapter, supported feature matrix, compatibility tests.
+- **Service modules:** API, identity/access, storage, jobs, events, notifications, tenant policies.
+- **Reference application:** demonstrate a real application using MW-BAAS and MW-ORM together.
+- **Release readiness:** security review, migration rehearsal, operational docs, reproducible CI.
+
+A milestone is complete only when acceptance tests and evidence are available. A README or architecture diagram alone is not proof of implementation.
+
+## Development
+
+This repository is transitioning from its Loco-derived foundation toward MW-BAAS. Until package migration is complete, consult the existing Rust workspace and development guidance before changing framework internals. Do not rename crates, replace the ORM dependency, or alter migration ownership as an isolated branding change.
+
+## References
+
+- [MoonWitness XV vision](https://github.com/bjo163/moonwitnessxv/blob/main/docs/vision/MASTER_VISION_NARRATIVE_XV.md)
+- [MW-ORM repository](https://github.com/BRIDGE-ALLAH/MW-ORM)
+- [MW-ORM architecture](https://github.com/BRIDGE-ALLAH/MW-ORM/blob/master/docs/ARCHITECTURE.md)
+- [MW-ORM implementation blueprint](https://github.com/BRIDGE-ALLAH/MW-ORM/blob/master/docs/BLUEPRINT.md)
+- [Integration contract](docs/architecture/MW-ORM-INTEGRATION.md)
+- [Brand narrative](docs/brand/BRAND.md)
+
+---
+**MW-BAAS — One Foundation. Many Applications. Accountable by Design.**
