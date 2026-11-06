@@ -62,3 +62,7 @@ pub mod cargo_config;
 
 /// Application results options list
 pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+/// Optional MoonWitness module runtime integration.
+#[cfg(feature = "moonwitness-modules")]
+pub mod modules;
