@@ -2,9 +2,7 @@
 
 #![cfg(feature = "mw-modules")]
 
-use loco_rs::modules::{
-    Module, ModuleContext, ModuleHost, ModuleManifest, ModuleRegistryBuilder,
-};
+use loco_rs::modules::{Module, ModuleContext, ModuleHost, ModuleManifest, ModuleRegistryBuilder};
 
 struct TestModule {
     manifest: ModuleManifest,
