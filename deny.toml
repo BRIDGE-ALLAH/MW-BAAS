@@ -30,6 +30,14 @@ ciphertext and leaks timing.
 
 Revisit when `rsa` ships a fix, or if Loco ever grows RSA decryption.
 """ },
+  { id = "RUSTSEC-2026-0440", reason = """
+`astral-tokio-tar` is an unmaintained transitive dependency of `testcontainers`,
+which is used only by development/test tooling in this repository. The advisory
+reports no safe upgrade path for the current dependency chain. It is not part of
+the runtime dependency path shipped to applications. Revisit this exception
+when `testcontainers` replaces the archive implementation or provides a safe
+upgrade path; do not add direct runtime use of this crate.
+""" },
   { id = "RUSTSEC-2024-0449", reason = """
 `unsafe-libyaml` is unmaintained. It is the YAML parser under
 `serde_yaml_ng`, which Loco uses to read its own config files and the
@@ -83,3 +91,4 @@ wildcards = "deny"
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
+allow-git = ["https://github.com/BRIDGE-ALLAH/MW-ORM"]

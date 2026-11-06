@@ -9,6 +9,16 @@
 
 pub use self::errors::Error;
 
+/// Experimental statically linked module runtime from MoonWitness ORM.
+///
+/// Enable the `mw-modules` Cargo feature to use this API. The runtime currently
+/// coordinates module validation and synchronous lifecycle hooks; it does not
+/// execute database migrations or provide tenant isolation.
+#[cfg(feature = "mw-modules")]
+pub mod modules {
+    pub use moonwitness_module::*;
+}
+
 mod banner;
 pub mod bgworker;
 mod byte_size;
@@ -48,6 +58,8 @@ pub mod mailer;
 pub mod notifications;
 pub mod scheduler;
 pub mod task;
+#[cfg(feature = "with-db")]
+pub mod tenant;
 #[cfg(feature = "testing-core")]
 pub mod testing;
 #[cfg(feature = "testing-core")]
