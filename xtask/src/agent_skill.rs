@@ -83,7 +83,6 @@ pub fn run(project_dir: &Path, check: bool) -> eyre::Result<()> {
         if check {
             let existing = fs::read_to_string(&target).unwrap_or_default();
             if existing.trim() != rendered.trim() {
-                println!("EXPECTED GENERATED FILE {out}:\\n{rendered}");
                 eyre::bail!(
                     "{out} is stale — {package}'s public API changed. \
                      Regenerate with `cargo xtask agent-skill` and commit the result."
