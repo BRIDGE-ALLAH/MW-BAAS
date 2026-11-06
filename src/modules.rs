@@ -11,11 +11,6 @@ use std::{
 };
 
 use async_trait::async_trait;
-use moonwitness_module::{
-    AsyncModuleHost, AsyncModuleRegistry, LifecycleError, ModuleContext,
-    ServiceRegistryBuilder,
-};
-
 use crate::{
     app::{AppContext, Initializer},
     errors::Error,
