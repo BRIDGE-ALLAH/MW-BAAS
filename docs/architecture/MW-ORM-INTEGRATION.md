@@ -114,6 +114,27 @@ The `with-db` build now exposes `loco_rs::tenant` with:
 - `TenantDatabaseProvider`: application-owned async adapter that resolves a verified principal to a dedicated tenant database.
 - `TenantDatabase`: a handle that carries the tenant ID alongside its SeaORM connection.
 
+Example wiring for a tenant-only Axum router (the adapters are application-owned):
+
+```rust,ignore
+use axum::{middleware::from_fn_with_state, routing::get, Extension, Router};
+use loco_rs::tenant::{
+    tenant_database_middleware, TenantDatabase, TenantMiddlewareState,
+};
+
+let tenant_state = TenantMiddlewareState::new(authenticator, database_provider);
+let tenant_routes = Router::new()
+    .route("/records", get(list_records))
+    .layer(from_fn_with_state(tenant_state, tenant_database_middleware));
+
+async fn list_records(Extension(tenant_db): Extension<TenantDatabase>) {
+    let db = tenant_db.connection();
+    // All tenant-scoped queries use this connection, never AppContext::db.
+}
+```
+
+The route handler must not accept a tenant ID from the request and use it to select a database itself. The authenticator must verify credentials and active tenant membership; the provider must resolve the trusted registry entry and return only that tenant's dedicated connection. Do not put bearer tokens or full database URIs in logs.
+
 This is an integration seam, not a completed runtime. No default provider is shipped. The framework now supplies an opt-in Axum request middleware seam: an application-owned authenticator validates credentials and tenant membership, then an application-owned provider resolves a dedicated database and the middleware injects a TenantDatabase extension. The framework still does not supply a tenant registry, token/session verifier, secrets manager, bounded pool cache/provider implementation, automatic route wiring, background-job propagation, provisioning lifecycle, per-tenant migration orchestration, or tenant-aware backup/restore. The ordinary global `AppContext::db` remains available for existing single-tenant applications; tenant-aware handlers must not use it as a fallback.
 
 Before using the API in an application, implement and test an adapter that:
