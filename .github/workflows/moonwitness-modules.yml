@@ -1,0 +1,27 @@
+name: MoonWitness module integration
+
+on:
+  push:
+    paths:
+      - "Cargo.toml"
+      - "src/modules.rs"
+      - "src/app.rs"
+      - "src/boot.rs"
+      - "src/lib.rs"
+      - ".github/workflows/moonwitness-modules.yml"
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "src/modules.rs"
+      - "src/app.rs"
+      - "src/lib.rs"
+      - ".github/workflows/moonwitness-modules.yml"
+
+jobs:
+  module-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check opt-in SQLite module integration
+        run: cargo check --features "with-db,db-sqlite,moonwitness-modules"
