@@ -95,6 +95,16 @@ Only after the experimental module API stabilizes and module migration semantics
 
 **Exit:** one schema owner, no untested migration, CI green, runbook available.
 
+## Tenant isolation architecture decision
+
+MW-BAAS has selected **a separate database per tenant**. The accepted decision and implementation contract are recorded in [ADR 0001 — Tenant Database per Tenant](adr/0001-tenant-database-per-tenant.md).
+
+The tenant registry/control plane and tenant-scoped connection provider belong to MW-BAAS, not MW-ORM. MW-ORM supplies database/ORM primitives; it must not become a second tenant registry or routing authority. The application must resolve tenant identity from trusted authenticated context, map it through the registry, and provide tenant-scoped connections to repositories and services. No global pool or default-tenant fallback may be exposed to tenant-scoped code.
+
+The existing Loco/SeaORM migration runner remains the single schema-migration owner. A BAAS orchestration layer may iterate over tenant databases and invoke the canonical migration runner for each approved target, recording per-tenant outcomes; it must not introduce a competing migration engine or history table.
+
+This decision does not make the current `multi-tenancy` feature alias a security boundary. Production use remains blocked until tenant provisioning, distinct least-privilege credentials, scoped pool management, migration orchestration, and cross-tenant negative tests are implemented and reviewed.
+
 ## Security and integrity requirements
 
 - Tenant isolation must cover queries, joins, raw SQL, background jobs, exports, and administrative paths.
@@ -123,7 +133,9 @@ MW-ORM architecture documents describe the module manifest, resolver, registry, 
 - [ ] Build a reference application.
 - [ ] Complete security review before tenant isolation claims.
 - [x] Add a security and operations release baseline; policy approval and production evidence remain pending.
-- [ ] Approve a tenant-isolation architecture ADR and pass cross-tenant negative tests.
+- [x] Approve tenant-isolation architecture ADR: separate database per tenant.
+- [ ] Implement tenant registry, scoped connection provider, per-tenant credentials, and provisioning lifecycle.
+- [ ] Pass cross-tenant negative tests for requests, pool reuse, transactions, jobs, raw SQL, exports, admin paths, migration, restore, and offboarding.
 - [ ] Migrate package identity only after compatibility gates.
 
 ## Security and operations companion
