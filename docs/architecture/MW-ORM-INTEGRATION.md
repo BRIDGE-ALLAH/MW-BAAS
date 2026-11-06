@@ -1,14 +1,14 @@
 # MW-BAAS ↔ MW-ORM Integration Contract
 
-**Status:** Architecture contract; implementation not yet proven.
+**Status:** Core ORM source pinned to MW-ORM; module kernel exposed behind an opt-in feature; end-to-end CI validation pending.
 
 ## Decision
 
-MW-BAAS consumes MW-ORM. MW-ORM remains independently usable and must never depend on MW-BAAS product code.
+MW-BAAS consumes MW-ORM. MW-ORM remains independently usable and must never depend on MW-BAAS product code. The current integration pins the `sea-orm` package to the MW-ORM Git revision below. A Cargo `[patch.crates-io]` entry is used so `sea-orm-migration` and other transitive consumers resolve the same ORM source and do not create duplicate `DatabaseConnection` types.
 
 The current MW-BAAS repository is a Loco-derived Rust framework whose database feature uses SeaORM 2.0 from crates.io. MW-ORM is an independently evolving SeaORM 2.0-derived repository. Shared ancestry and version numbers do not prove API, macro, migration, driver, or runtime compatibility.
 
-**Do not switch the production dependency to a Git revision until an isolated compatibility spike and CI matrix pass.**
+The pinned revision is an integration candidate, not a production compatibility certification. The PR CI must pass the full feature matrix before this change is considered validated.
 
 ## Ownership
 
@@ -24,6 +24,15 @@ The current MW-BAAS repository is a Loco-derived Rust framework whose database f
 | Schema migration history | One explicitly selected owner per application |
 
 Never run two ORMs as competing owners of the same models, schema, migration history, or transaction boundary. ORM entities must not be serialized directly as public API responses.
+
+## Current pinned integration revision
+
+- Repository: `https://github.com/BRIDGE-ALLAH/MW-ORM`
+- Revision: `cfeeba8eb4a3e19f5ff42afc7bb07ff9c9674ba0`
+- ORM package: `sea-orm` version `2.0.4` (upstream-compatible package identity retained).
+- Module kernel package: `moonwitness-module` version `0.1.0`, optional behind BAAS feature `mw-modules`.
+- Cargo patches crates.io `sea-orm` globally so `sea-orm-migration` resolves the same source.
+- The module kernel is re-exported as `loco_rs::modules` when `mw-modules` is enabled. It currently offers typed manifests, deterministic dependency planning, a static registry, and synchronous prepare/activate/deactivate hooks. It does **not** run module migrations, manage persistence, or provide tenant isolation.
 
 ## Staged integration
 
@@ -91,11 +100,12 @@ MW-ORM architecture documents describe the module manifest, resolver, registry, 
 ## Engineering checklist
 
 - [ ] Capture baseline CI for both repositories.
-- [ ] Pin and test a specific MW-ORM revision.
+- [x] Pin a specific MW-ORM revision and route the SeaORM package through it.
+- [ ] Pass the complete PR feature matrix and module-kernel integration test.
 - [ ] Compile entity, macro, query, relation, and transaction fixture.
 - [ ] Verify database drivers and runtime/TLS feature combinations.
 - [ ] Select one migration owner and test migration history.
-- [ ] Add adapter and compatibility tests.
+- [ ] Expand ORM/migration adapter and compatibility tests.
 - [ ] Build a reference application.
 - [ ] Complete security review before tenant isolation claims.
 - [ ] Migrate package identity only after compatibility gates.
