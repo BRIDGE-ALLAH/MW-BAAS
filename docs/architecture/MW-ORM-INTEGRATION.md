@@ -6,7 +6,7 @@
 
 MW-BAAS consumes MW-ORM. MW-ORM remains independently usable and must never depend on MW-BAAS product code. The current integration pins the `sea-orm` package to the MW-ORM Git revision below. A Cargo `[patch.crates-io]` entry is used so `sea-orm-migration` and other transitive consumers resolve the same ORM source and do not create duplicate `DatabaseConnection` types.
 
-The current MW-BAAS repository is a Loco-derived Rust framework whose database feature uses SeaORM 2.0 from crates.io. MW-ORM is an independently evolving SeaORM 2.0-derived repository. Shared ancestry and version numbers do not prove API, macro, migration, driver, or runtime compatibility.
+Before this integration change, MW-BAAS resolved SeaORM 2.0 from crates.io. This branch now patches the `sea-orm` package to an immutable MW-ORM revision. MW-ORM remains a SeaORM 2.0-derived codebase; shared ancestry and version numbers do not by themselves prove API, macro, migration, driver, or runtime compatibility. CI evidence is still required.
 
 The pinned revision is an integration candidate, not a production compatibility certification. The PR CI must pass the full feature matrix before this change is considered validated.
 
@@ -49,7 +49,7 @@ Never run two ORMs as competing owners of the same models, schema, migration his
 - Compile a minimal application with one entity, relation, query, and transaction.
 - Test SQLite and PostgreSQL separately where supported.
 - Verify macros, migrations, feature unification, and downstream compilation.
-- Keep the current crates.io dependency available until the spike passes.
+- Confirm Cargo resolves `sea-orm` and `sea-orm-migration` to one patched source using the dependency tree and build output.
 
 **Exit:** compile and integration tests pass without duplicate ORM ownership.
 
@@ -63,7 +63,7 @@ Never run two ORMs as competing owners of the same models, schema, migration his
 **Exit:** adapter, migration, and compatibility tests pass.
 
 ### Stage 3 — Module composition
-Only after MW-ORM implements and tests its module kernel:
+Only after the experimental module API stabilizes and module migration semantics are implemented and tested:
 - Register BAAS service modules through stable contracts.
 - Validate dependencies and compatibility before activation.
 - Make lifecycle ordering deterministic and observable.
