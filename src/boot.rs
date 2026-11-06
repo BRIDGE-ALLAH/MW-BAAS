@@ -494,76 +494,89 @@ pub async fn create_app<H: Hooks>(
 ///
 /// When could not create the application
 pub async fn run_app<H: Hooks>(mode: &StartMode, app_context: AppContext) -> Result<BootResult> {
-    H::before_run(&app_context).await?;
-    let initializers = H::initializers(&app_context).await?;
+    // Keep a shared-store clone so an initializer or route setup failure can
+    // still deactivate modules that were already started.
+    let cleanup_context = app_context.clone();
+    let result = async move {
+        H::before_run(&app_context).await?;
+        let initializers = H::initializers(&app_context).await?;
 
-    info!(
-        initializers = ?initializers.iter().map(|init| init.name()).collect::<Vec<_>>().join(","),
-        "initializers loaded"
-    );
+        info!(
+            initializers = ?initializers.iter().map(|init| init.name()).collect::<Vec<_>>().join(","),
+            "initializers loaded"
+        );
 
-    for initializer in &initializers {
-        initializer.before_run(&app_context).await?;
+        for initializer in &initializers {
+            initializer.before_run(&app_context).await?;
+        }
+
+        match mode {
+            StartMode::ServerOnly => {
+                let router = setup_routes::<H>(&app_context, &initializers).await?;
+                Ok(BootResult {
+                    app_context,
+                    router: Some(router),
+                    worker: None,
+                    run_scheduler: false,
+                })
+            }
+            StartMode::ServerAndWorker => {
+                register_workers::<H>(&app_context).await?;
+                let router = setup_routes::<H>(&app_context, &initializers).await?;
+                Ok(BootResult {
+                    app_context,
+                    router: Some(router),
+                    worker: Some(vec![]),
+                    run_scheduler: false,
+                })
+            }
+            StartMode::ServerAndScheduler => {
+                let router = setup_routes::<H>(&app_context, &initializers).await?;
+                Ok(BootResult {
+                    app_context,
+                    router: Some(router),
+                    worker: None,
+                    run_scheduler: true,
+                })
+            }
+            StartMode::All => {
+                register_workers::<H>(&app_context).await?;
+                let router = setup_routes::<H>(&app_context, &initializers).await?;
+                Ok(BootResult {
+                    app_context,
+                    router: Some(router),
+                    worker: Some(vec![]),
+                    run_scheduler: true,
+                })
+            }
+            StartMode::WorkerOnly { tags } => {
+                register_workers::<H>(&app_context).await?;
+                Ok(BootResult {
+                    app_context,
+                    router: None,
+                    worker: Some(tags.clone()),
+                    run_scheduler: false,
+                })
+            }
+            StartMode::WorkerAndScheduler { tags } => {
+                register_workers::<H>(&app_context).await?;
+                Ok(BootResult {
+                    app_context,
+                    router: None,
+                    worker: Some(tags.clone()),
+                    run_scheduler: true,
+                })
+            }
+        }
+    }.await;
+
+    if result.is_err() {
+        #[cfg(feature = "moonwitness-modules")]
+        if let Err(error) = crate::modules::shutdown(&cleanup_context).await {
+            error!(%error, "MoonWitness module cleanup after boot failure failed");
+        }
     }
-
-    match mode {
-        StartMode::ServerOnly => {
-            let router = setup_routes::<H>(&app_context, &initializers).await?;
-            Ok(BootResult {
-                app_context,
-                router: Some(router),
-                worker: None,
-                run_scheduler: false,
-            })
-        }
-        StartMode::ServerAndWorker => {
-            register_workers::<H>(&app_context).await?;
-            let router = setup_routes::<H>(&app_context, &initializers).await?;
-            Ok(BootResult {
-                app_context,
-                router: Some(router),
-                worker: Some(vec![]),
-                run_scheduler: false,
-            })
-        }
-        StartMode::ServerAndScheduler => {
-            let router = setup_routes::<H>(&app_context, &initializers).await?;
-            Ok(BootResult {
-                app_context,
-                router: Some(router),
-                worker: None,
-                run_scheduler: true,
-            })
-        }
-        StartMode::All => {
-            register_workers::<H>(&app_context).await?;
-            let router = setup_routes::<H>(&app_context, &initializers).await?;
-            Ok(BootResult {
-                app_context,
-                router: Some(router),
-                worker: Some(vec![]),
-                run_scheduler: true,
-            })
-        }
-        StartMode::WorkerOnly { tags } => {
-            register_workers::<H>(&app_context).await?;
-            Ok(BootResult {
-                app_context,
-                router: None,
-                worker: Some(tags.clone()),
-                run_scheduler: false,
-            })
-        }
-        StartMode::WorkerAndScheduler { tags } => {
-            register_workers::<H>(&app_context).await?;
-            Ok(BootResult {
-                app_context,
-                router: None,
-                worker: Some(tags.clone()),
-                run_scheduler: true,
-            })
-        }
-    }
+    result
 }
 
 /// Sets up the application's routes based on the provided initializers and hooks.
