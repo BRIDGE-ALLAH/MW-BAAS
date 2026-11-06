@@ -56,7 +56,7 @@ There must be one authoritative owner for each schema, migration history, and tr
 
 ## Relationship with MW-ORM
 
-MW-ORM is evolving independently from a SeaORM 2.0 codebase. Its architecture describes a target modular platform composed of an ORM Core, Module Kernel, and optional Add-ons. The module manifest, resolver, lifecycle coordinator, and add-on ecosystem must not be treated as shipped capabilities until implementation and tests land.
+MW-ORM is evolving independently from a SeaORM 2.0 codebase. MW-BAAS pins its `sea-orm` dependency to a reviewed MW-ORM Git revision; the Cargo patch also keeps `sea-orm-migration` on the same source. The optional `mw-modules` feature exposes the experimental `moonwitness-module` kernel through `loco_rs::modules`. Its manifest, resolver, registry, and synchronous lifecycle API are available at that pinned revision, but database migration coordination and add-on runtime behavior remain unimplemented.
 
 MW-BAAS adopts an incremental integration policy:
 
@@ -75,10 +75,10 @@ This repository currently contains a Loco-derived Rust framework codebase. Exist
 | Area | Status |
 |---|---|
 | Product narrative and responsibility boundaries | Documented |
-| MW-ORM integration contract | Documented; implementation pending |
+| MW-ORM core source pin | Configured; CI validation pending |
 | Existing HTTP/backend foundation | Present; requires MW-BAAS-specific audit |
 | Package/crate identity migration | Not started; compatibility-sensitive |
-| MW-ORM adapter and compatibility tests | Not yet proven |
+| MW-ORM module kernel | Opt-in API exposed; integration test and CI pending |
 | Production readiness | Not claimed |
 
 ## Design principles
