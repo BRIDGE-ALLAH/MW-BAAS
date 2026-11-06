@@ -48,6 +48,10 @@ For a deeper dive into how Loco works, including detailed guides, examples, and 
 
 So see more Loco features, check out our [documentation website](https://loco.rs/docs/getting-started/tour/).
 
+## MoonWitness module runtime (optional)
+
+MW-BAAS includes an opt-in integration with the MoonWitness typed module kernel. Enable the `moonwitness-modules` feature to register statically linked async modules in Loco's initializer lifecycle. The runtime injects the application's SeaORM connection as a typed service and stops modules during the default server shutdown path. See [MoonWitness module integration](docs/MOONWITNESS_MODULES.md) for setup and limitations.
+
 ## Getting Started
 <!-- <snip id="quick-installation-command" inject_from="yaml" template="sh"> -->
 ```sh
