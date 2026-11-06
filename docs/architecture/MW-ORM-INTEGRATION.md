@@ -122,7 +122,13 @@ MW-ORM architecture documents describe the module manifest, resolver, registry, 
 - [ ] Expand ORM/migration adapter and compatibility tests.
 - [ ] Build a reference application.
 - [ ] Complete security review before tenant isolation claims.
+- [x] Add a security and operations release baseline; policy approval and production evidence remain pending.
+- [ ] Approve a tenant-isolation architecture ADR and pass cross-tenant negative tests.
 - [ ] Migrate package identity only after compatibility gates.
+
+## Security and operations companion
+
+See [Security and Operations Baseline](../operations/SECURITY-AND-OPERATIONS-BASELINE.md) for release blockers, tenant-isolation coverage, audit-policy decisions, deployment, backup/restore, recovery, and observability requirements.
 
 ## References
 
