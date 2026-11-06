@@ -114,7 +114,7 @@ The `with-db` build now exposes `loco_rs::tenant` with:
 - `TenantDatabaseProvider`: application-owned async adapter that resolves a verified principal to a dedicated tenant database.
 - `TenantDatabase`: a handle that carries the tenant ID alongside its SeaORM connection.
 
-This is an integration seam, not a completed runtime. No default provider is shipped. The framework does not yet supply a tenant registry, identity verifier, secrets manager, bounded pool cache, Axum request middleware, background-job propagation, provisioning lifecycle, per-tenant migration orchestration, or tenant-aware backup/restore. The ordinary global `AppContext::db` remains available for existing single-tenant applications; tenant-aware handlers must not use it as a fallback.
+This is an integration seam, not a completed runtime. No default provider is shipped. The framework now supplies an opt-in Axum request middleware seam: an application-owned authenticator validates credentials and tenant membership, then an application-owned provider resolves a dedicated database and the middleware injects a TenantDatabase extension. The framework still does not supply a tenant registry, token/session verifier, secrets manager, bounded pool cache/provider implementation, automatic route wiring, background-job propagation, provisioning lifecycle, per-tenant migration orchestration, or tenant-aware backup/restore. The ordinary global `AppContext::db` remains available for existing single-tenant applications; tenant-aware handlers must not use it as a fallback.
 
 Before using the API in an application, implement and test an adapter that:
 1. verifies the authentication token and derives the subject and tenant claim from trusted claims;
@@ -124,7 +124,7 @@ Before using the API in an application, implement and test an adapter that:
 5. injects the resulting TenantDatabase into request/job context only after successful resolution, failing closed on all errors;
 6. applies the canonical Loco/SeaORM migration runner to each tenant database and records per-tenant outcomes.
 
-The new `src/tenant.rs` unit tests cover tenant-ID syntax and principal input validation only. They are not cross-tenant isolation tests and do not prove the provider implementation. Multi-tenant production remains blocked until a real downstream fixture exercises two isolated databases, concurrent requests, pool reuse, transactions, raw SQL, background jobs, exports, admin access, migration failure/retry, backup/restore, and offboarding.
+The new `src/tenant.rs` unit tests cover tenant-ID syntax and principal input validation only. The middleware requires app-owned adapters and explicit wiring; its presence is not proof of cross-tenant isolation. These tests do not prove the provider implementation or real database separation. Multi-tenant production remains blocked until a real downstream fixture exercises two isolated databases, concurrent requests, pool reuse, transactions, raw SQL, background jobs, exports, admin access, migration failure/retry, backup/restore, and offboarding.
 
 ## Security and integrity requirements
 
