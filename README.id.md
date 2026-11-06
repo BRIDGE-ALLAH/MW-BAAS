@@ -56,7 +56,7 @@ Setiap schema, riwayat migrasi, dan batas transaksi harus memiliki satu pemilik 
 
 ## Hubungan dengan MW-ORM
 
-MW-ORM berkembang secara independen dari codebase SeaORM 2.0. Arsitekturnya menjelaskan target platform modular yang terdiri dari ORM Core, Module Kernel, dan Add-ons opsional. Manifest modul, resolver, lifecycle coordinator, dan ekosistem add-on belum boleh dianggap sebagai fitur tersedia sebelum implementasi dan pengujian selesai.
+MW-ORM berkembang secara independen dari codebase SeaORM 2.0. MW-BAAS mematok dependensi `sea-orm` ke revisi Git MW-ORM; patch Cargo juga memastikan `sea-orm-migration` memakai sumber ORM yang sama. Feature opsional `mw-modules` mengekspos kernel eksperimental `moonwitness-module` melalui `loco_rs::modules`. Manifest, resolver, registry, dan API lifecycle sinkron tersedia pada revisi tersebut, tetapi koordinasi migrasi database dan perilaku add-on runtime belum diimplementasikan.
 
 Strategi integrasi MW-BAAS dilakukan bertahap:
 
@@ -75,10 +75,10 @@ Repositori ini saat ini berisi codebase framework Rust turunan Loco. Metadata pa
 | Area | Status |
 |---|---|
 | Narasi produk dan batas tanggung jawab | Terdokumentasi |
-| Kontrak integrasi MW-ORM | Terdokumentasi; implementasi menunggu |
+| Pin sumber MW-ORM Core | Dikonfigurasi; menunggu validasi CI |
 | Fondasi HTTP/backend saat ini | Ada; perlu audit khusus MW-BAAS |
 | Migrasi identitas paket/crate | Belum dimulai; sensitif terhadap kompatibilitas |
-| Adapter MW-ORM dan tes kompatibilitas | Belum terbukti |
+| Kernel modul MW-ORM | API opsional tersedia; tes integrasi dan CI menunggu |
 | Kesiapan produksi | Tidak diklaim |
 
 ## Prinsip desain
