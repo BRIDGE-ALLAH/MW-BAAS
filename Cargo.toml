@@ -109,6 +109,9 @@ db-postgres = [
 # `cargo loco generate` (debug builds only). Pulls `loco-gen` and, through
 # `rrgen`, a second (Tera 1) template engine; release builds never use it.
 generators = ["dep:loco-gen"]
+# Experimental static module composition from MoonWitness ORM.
+# This does not enable module-owned database migrations; those remain a separate project.
+mw-modules = ["dep:moonwitness-module"]
 # The `compression` middleware. `compression` is gzip only, which every client
 # accepts, and is the default. `compression-full` adds brotli, deflate and zstd;
 # zstd is a C build and brotli a large one, together more compile time than the
@@ -312,6 +315,9 @@ tower-http = { version = "0.6.8", features = [
 heck = "0.5.0"
 duct = { version = "1.0.0" }
 
+# Pinned experimental MoonWitness module kernel. Enabled explicitly with `mw-modules`.
+moonwitness-module = { git = "https://github.com/BRIDGE-ALLAH/MW-ORM", rev = "cfeeba8eb4a3e19f5ff42afc7bb07ff9c9674ba0", optional = true }
+
 [dependencies.sea-orm-migration]
 optional = true
 version = "2.0"
@@ -345,3 +351,10 @@ sqlx = { version = "0.9", default-features = false, features = [
 ] }
 testcontainers = { version = "0.27" }
 serial_test = { version = "3.5.0" }
+
+
+# Keep every consumer of SeaORM (including sea-orm-migration) on the same
+# MoonWitness ORM source so DatabaseConnection and related types are not split
+# across crates.io and Git revisions. The revision is intentionally immutable.
+[patch.crates-io]
+sea-orm = { git = "https://github.com/BRIDGE-ALLAH/MW-ORM", rev = "cfeeba8eb4a3e19f5ff42afc7bb07ff9c9674ba0" }
