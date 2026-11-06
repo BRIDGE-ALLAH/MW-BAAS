@@ -13,11 +13,11 @@ license = "Apache-2.0"
 [package]
 name = "loco-rs"
 version = "1.3.1"
-description = "The one-person framework for Rust"
-homepage = "https://loco.rs/"
+description = "The modular backend foundation for the MoonWitness ecosystem"
+homepage = "https://github.com/BRIDGE-ALLAH/MW-BAAS"
 documentation = "https://docs.rs/loco-rs"
-repository = "https://github.com/loco-rs/loco"
-keywords = ["web", "framework", "rails", "api", "backend"]
+repository = "https://github.com/BRIDGE-ALLAH/MW-BAAS"
+keywords = ["moonwitness", "backend", "api", "rust", "modular"]
 categories = ["web-programming::http-server", "web-programming", "development-tools"]
 license.workspace = true
 edition.workspace = true
@@ -118,7 +118,9 @@ mw-modules = ["dep:moonwitness-module"]
 # rest of tower-http.
 compression = ["tower-http/compression-gzip"]
 compression-full = ["compression", "tower-http/compression-full"]
-# Explicit tenant scoping for Sea-ORM models and queries.
+# Compatibility feature alias only. Tenant isolation is not implemented by this feature.
+# Do not rely on it as a security boundary; use application-level controls until
+# a reviewed, tested tenant-scoping contract is implemented.
 multi-tenancy = ["with-db"]
 # Storage features
 all_storage = ["storage_aws_s3", "storage_azure", "storage_gcp"]
