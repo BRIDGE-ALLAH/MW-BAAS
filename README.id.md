@@ -70,7 +70,7 @@ Baca [Kontrak Integrasi MW-ORM](docs/architecture/MW-ORM-INTEGRATION.md) dan [Na
 
 ## Status implementasi saat ini
 
-Repositori ini saat ini berisi codebase framework Rust turunan Loco. Metadata paket dan integrasi database masih mengidentifikasi Loco dan SeaORM. Identitas MW-BAAS dan integrasi MW-ORM merupakan arah pengembangan—bukan bukti bahwa penggantian nama paket atau adapter MW-ORM siap produksi telah selesai.
+Repositori ini masih berisi codebase framework Rust turunan Loco. Identitas paket/crate publik tetap `loco-rs` / `loco_rs` demi kompatibilitas, sementara branch ini mematok sumber paket SeaORM ke revisi Git MW-ORM tertentu. Kernel modul eksperimental tersedia melalui feature opsional; ini belum berarti startup BAAS, migrasi, atau kebijakan tenant sudah terintegrasi penuh.
 
 | Area | Status |
 |---|---|
