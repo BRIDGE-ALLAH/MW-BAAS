@@ -64,11 +64,8 @@ impl TenantId {
     pub fn as_str(&self) -> &str {
         &self.0
     }
-
-
-
-
 }
+
 
 /// Authenticated tenant and subject identity passed to a tenant DB provider.
 ///
@@ -190,10 +187,8 @@ pub trait TenantRequestAuthenticator: Send + Sync {
     ///
     /// Returns an authorization error when credentials or tenant membership
     /// are missing, invalid, expired, or inactive.
-    async fn authenticate(
-        &self,
-        request: &TenantRequestContext,
-    ) -> Result<VerifiedTenantPrincipal>;
+    async fn authenticate(&self, request: &TenantRequestContext)
+        -> Result<VerifiedTenantPrincipal>;
 }
 
 /// Dependencies required by the tenant database request middleware.
@@ -253,10 +248,7 @@ pub trait TenantDatabaseProvider: Send + Sync {
     ///
     /// Returns an error when the tenant is not active, registry or secret
     /// resolution fails, or its dedicated database cannot be reached.
-    async fn resolve(
-        &self,
-        principal: &VerifiedTenantPrincipal,
-    ) -> Result<TenantDatabase>;
+    async fn resolve(&self, principal: &VerifiedTenantPrincipal) -> Result<TenantDatabase>;
 }
 
 #[cfg(test)]
@@ -271,7 +263,14 @@ mod tests {
 
     #[test]
     fn tenant_id_rejects_empty_or_unsafe_identifiers() {
-        for value in ["", "../tenant", "tenant/a", "tenant a", "tenant?x=1", "租户"] {
+        for value in [
+            "",
+            "../tenant",
+            "tenant/a",
+            "tenant a",
+            "tenant?x=1",
+            "租户",
+        ] {
             assert!(
                 TenantId::parse(value).is_err(),
                 "expected rejection for {value:?}"
@@ -289,11 +288,8 @@ mod tests {
     #[tokio::test]
     async fn middleware_injects_the_database_resolved_for_the_verified_tenant() {
         use axum::{
+            body::to_bytes, http::StatusCode, middleware::from_fn_with_state, routing::get,
             Extension, Router,
-            body::to_bytes,
-            http::StatusCode,
-            middleware::from_fn_with_state,
-            routing::get,
         };
         use sea_orm::Database;
         use tower::ServiceExt;
@@ -316,10 +312,7 @@ mod tests {
 
         #[async_trait]
         impl TenantDatabaseProvider for TestProvider {
-            async fn resolve(
-                &self,
-                principal: &VerifiedTenantPrincipal,
-            ) -> Result<TenantDatabase> {
+            async fn resolve(&self, principal: &VerifiedTenantPrincipal) -> Result<TenantDatabase> {
                 let tenant_id = TenantId::parse(principal.tenant_id().as_str())?;
                 Ok(TenantDatabase::new(tenant_id, self.connection.clone()))
             }
@@ -335,14 +328,21 @@ mod tests {
         let app = Router::new()
             .route(
                 "/tenant",
-                get(|Extension(database): Extension<TenantDatabase>| async move {
-                    database.tenant_id().as_str().to_owned()
-                }),
+                get(
+                    |Extension(database): Extension<TenantDatabase>| async move {
+                        database.tenant_id().as_str().to_owned()
+                    },
+                ),
             )
             .layer(from_fn_with_state(state, tenant_database_middleware));
 
         let response = app
-            .oneshot(Request::builder().uri("/tenant").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/tenant")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .expect("request should complete");
         assert_eq!(response.status(), StatusCode::OK);
@@ -355,12 +355,7 @@ mod tests {
     #[cfg(feature = "db-sqlite")]
     #[tokio::test]
     async fn middleware_fails_closed_when_authentication_fails() {
-        use axum::{
-            Router,
-            http::StatusCode,
-            middleware::from_fn_with_state,
-            routing::get,
-        };
+        use axum::{http::StatusCode, middleware::from_fn_with_state, routing::get, Router};
         use std::sync::atomic::{AtomicUsize, Ordering};
         use tower::ServiceExt;
 
@@ -385,7 +380,9 @@ mod tests {
                 _principal: &VerifiedTenantPrincipal,
             ) -> Result<TenantDatabase> {
                 self.0.fetch_add(1, Ordering::SeqCst);
-                Err(Error::Unauthorized("provider must not be called".to_owned()))
+                Err(Error::Unauthorized(
+                    "provider must not be called".to_owned(),
+                ))
             }
         }
 
@@ -414,11 +411,8 @@ mod tests {
         use std::collections::HashMap;
 
         use axum::{
+            body::to_bytes, http::StatusCode, middleware::from_fn_with_state, routing::get,
             Extension, Router,
-            body::to_bytes,
-            http::StatusCode,
-            middleware::from_fn_with_state,
-            routing::get,
         };
         use sea_orm::{ConnectOptions, ConnectionTrait, Database, DatabaseBackend, Statement};
         use tower::ServiceExt;
@@ -485,19 +479,21 @@ mod tests {
         let app = Router::new()
             .route(
                 "/tenant",
-                get(|Extension(database): Extension<TenantDatabase>| async move {
-                    let row = database
-                        .connection()
-                        .query_one(Statement::from_string(
-                            DatabaseBackend::Sqlite,
-                            "SELECT value FROM tenant_marker",
-                        ))
-                        .await
-                        .expect("query tenant database")
-                        .expect("tenant marker exists");
-                    row.try_get::<String>("", "value")
-                        .expect("read tenant marker")
-                }),
+                get(
+                    |Extension(database): Extension<TenantDatabase>| async move {
+                        let row = database
+                            .connection()
+                            .query_one(&Statement::from_string(
+                                DatabaseBackend::Sqlite,
+                                "SELECT value FROM tenant_marker",
+                            ))
+                            .await
+                            .expect("query tenant database")
+                            .expect("tenant marker exists");
+                        row.try_get::<String>("", "value")
+                            .expect("read tenant marker")
+                    },
+                ),
             )
             .layer(from_fn_with_state(state, tenant_database_middleware));
 
@@ -520,6 +516,5 @@ mod tests {
             assert_eq!(&body[..], expected.as_bytes());
         }
     }
-
-
 }
+
