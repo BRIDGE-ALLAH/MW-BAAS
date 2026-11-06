@@ -42,7 +42,8 @@ values can be passed through `ModulesInitializer::with_configuration`.
 ## Shutdown
 
 The default Loco `Hooks::serve` path calls the application's `on_shutdown`
-hook and then deactivates the module host. If an application overrides
+hook and then deactivates the module host. Worker-only shutdown paths also stop
+the host, and boot failures after module startup trigger best-effort cleanup. If an application overrides
 `Hooks::serve`, it must call `loco_rs::modules::shutdown(ctx).await` during
 its shutdown path. The running host can be accessed through
 `loco_rs::modules::runtime(ctx)`.
