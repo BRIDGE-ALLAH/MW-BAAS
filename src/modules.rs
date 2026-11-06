@@ -64,8 +64,12 @@ impl Initializer for ModulesInitializer {
             .map_err(|error: LifecycleError| Error::string(&error.to_string()))?;
         let context = ModuleContext::with_services(self.configuration.clone(), services.build());
         let mut host = AsyncModuleHost::new(registry, context);
-        host.start().await
-            .map_err(|error| Error::string(&error.to_string()))?;
+        if let Err(error) = host.start().await {
+            if let Err(cleanup_error) = host.stop().await {
+                tracing::error!(%cleanup_error, "MoonWitness module rollback retry failed");
+            }
+            return Err(Error::string(&error.to_string()));
+        }
 
         app_context.shared_store.insert(Arc::new(tokio::sync::Mutex::new(host)));
         Ok(())
