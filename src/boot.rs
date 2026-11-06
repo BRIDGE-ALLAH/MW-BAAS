@@ -166,6 +166,10 @@ async fn await_shutdown_then_run_hook<H: Hooks>(
 ) {
     shutdown.await;
     H::on_shutdown(app_context).await;
+    #[cfg(feature = "moonwitness-modules")]
+    if let Err(error) = crate::modules::shutdown(app_context).await {
+        error!(%error, "MoonWitness module shutdown failed");
+    }
 }
 
 fn start_queue_worker(app_context: &AppContext, tags: Vec<String>) -> Result<JoinHandle<()>> {
