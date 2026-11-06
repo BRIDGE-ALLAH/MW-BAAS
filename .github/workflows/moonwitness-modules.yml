@@ -24,4 +24,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Check opt-in SQLite module integration
-        run: cargo check --no-default-features --features "with-db,db-sqlite,moonwitness-modules"
+        run: cargo check --features "with-db,db-sqlite,moonwitness-modules"
