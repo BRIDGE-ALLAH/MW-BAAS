@@ -496,6 +496,7 @@ pub async fn create_app<H: Hooks>(
 pub async fn run_app<H: Hooks>(mode: &StartMode, app_context: AppContext) -> Result<BootResult> {
     // Keep a shared-store clone so an initializer or route setup failure can
     // still deactivate modules that were already started.
+    #[cfg(feature = "moonwitness-modules")]
     let cleanup_context = app_context.clone();
     let result = async move {
         H::before_run(&app_context).await?;
