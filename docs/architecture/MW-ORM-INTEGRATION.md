@@ -145,7 +145,7 @@ Before using the API in an application, implement and test an adapter that:
 5. injects the resulting TenantDatabase into request/job context only after successful resolution, failing closed on all errors;
 6. applies the canonical Loco/SeaORM migration runner to each tenant database and records per-tenant outcomes.
 
-The new `src/tenant.rs` unit tests cover tenant-ID syntax and principal input validation only. The middleware requires app-owned adapters and explicit wiring; its presence is not proof of cross-tenant isolation. These tests do not prove the provider implementation or real database separation. Multi-tenant production remains blocked until a real downstream fixture exercises two isolated databases, concurrent requests, pool reuse, transactions, raw SQL, background jobs, exports, admin access, migration failure/retry, backup/restore, and offboarding.
+The new `src/tenant.rs` tests cover tenant-ID syntax, principal input validation, request-level database extension injection, and fail-closed behavior when authentication fails (SQLite-enabled test builds). They do not prove the provider implementation, two-database separation, pool isolation, or cross-tenant data-access safety. Multi-tenant production remains blocked until a real downstream fixture exercises two isolated databases, concurrent requests, pool reuse, transactions, raw SQL, background jobs, exports, admin access, migration failure/retry, backup/restore, and offboarding.
 
 ## Security and integrity requirements
 
