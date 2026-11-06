@@ -70,7 +70,7 @@ See [MW-ORM Integration Contract](docs/architecture/MW-ORM-INTEGRATION.md) and [
 
 ## Current implementation status
 
-This repository currently contains a Loco-derived Rust framework codebase. Existing package metadata and database integration still identify Loco and SeaORM. The MW-BAAS identity and MW-ORM integration described here are the intended direction—not proof that package renaming or a production-proven MW-ORM adapter is complete.
+This repository currently contains a Loco-derived Rust framework codebase. Its public package/crate identity remains `loco-rs` / `loco_rs` for compatibility, while this branch pins the SeaORM package source to a specific MW-ORM Git revision. The experimental module kernel is exposed behind an opt-in feature; this does not yet mean BAAS startup, migrations, or tenant policies are fully integrated.
 
 | Area | Status |
 |---|---|
