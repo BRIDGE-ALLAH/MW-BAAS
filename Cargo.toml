@@ -168,7 +168,7 @@ backtrace_printer = { version = "1.3.0" }
 # cli
 clap = { version = "4.4.7", features = ["derive"], optional = true }
 colored = { workspace = true }
-moonwitness-module = { git = "https://github.com/BRIDGE-ALLAH/MW-ORM", rev = "be0a54a3c5365f6cf1898497b88a7c34179bd417", optional = true }
+moonwitness-module = { git = "https://github.com/BRIDGE-ALLAH/MW-ORM", rev = "b337f6c99d10855be5c03fef808aa48a60b03346", optional = true }
 sea-orm = { version = "2.0", features = [
     "runtime-tokio-rustls",
     "macros",
