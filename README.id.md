@@ -1,116 +1,120 @@
- <div align="center">
+# MW-BAAS
 
-   <img src="https://github.com/loco-rs/loco/assets/83390/992d215a-3cd3-42ee-a1c7-de9fd25a5bac"/>
+### Infrastruktur di Balik Setiap Kesaksian.
+**Platform backend modular untuk ekosistem MoonWitness.**
 
-   <h1>Selamat datang di Loco</h1>
+*Satu Fondasi. Banyak Aplikasi. Dapat Dipertanggungjawabkan Sejak Desain.*
 
-   <h3>
-   <!-- <snip id="description" inject_from="yaml"> -->
-🚂 Loco adalah Rust on Rails.
-<!--</snip> -->
-   </h3>
+MW-BAAS adalah platform backend yang dirancang untuk mendukung produk-produk dalam ekosistem MoonWitness. MW-BAAS menyediakan layanan untuk aplikasi—HTTP API, identitas dan akses, pekerjaan latar belakang, penyimpanan, cache, notifikasi, integrasi, dan operasional—dengan **MoonWitness ORM (MW-ORM)** sebagai fondasi relasional dan data modular yang dapat digunakan kembali.
 
-   [![crate](https://img.shields.io/crates/v/loco-rs.svg)](https://crates.io/crates/loco-rs)
-   [![docs](https://docs.rs/loco-rs/badge.svg)](https://docs.rs/loco-rs)
-   [![Discord channel](https://img.shields.io/badge/discord-Join-us)](https://discord.gg/fTvyBzwKS8)
+MW-BAAS memungkinkan berbagai aplikasi berbagi infrastruktur andal tanpa harus meleburkan logika produk masing-masing.
 
- </div>
+> The Moon Watches. The Record Remembers. The Evidence Remains Inspectable.
 
-[English](./README.md) · [中文](./README-zh_CN.md) · [Français](./README.fr.md) · [Portuguese (Brazil)](./README-pt_BR.md) ・ [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Русский](./README.ru.md) · [Español](./README.es.md) · [Vietnamese](./README.vi.md) · [العربية](./README.ar.md) · Bahasa Indonesia
+Prinsip ini berangkat dari visi MoonWitness: menjaga materi asli, menelusuri klaim ke sumbernya, membedakan bukti dari interpretasi, menghormati persetujuan dan hak, serta memastikan keputusan penting dapat dipertanggungjawabkan oleh manusia.
 
-## Apa itu Loco?
+## Identitas produk
 
-`Loco` sangat terinspirasi oleh Rails. Jika Anda mengenal Rails dan Rust, Anda akan merasa familiar. Jika Anda hanya mengenal Rails dan baru menggunakan Rust, Loco akan terasa menyegarkan. Kami tidak berasumsi bahwa Anda sudah mengenal Rails.
+| Lapisan | Tanggung jawab |
+|---|---|
+| **Empire of the Light** | Visi induk dan konteks ekosistem |
+| **MoonWitness** | Ekosistem pengetahuan, kesaksian, riset, dan storytelling untuk publik |
+| **MW-BAAS** | Platform backend bersama dan layanan aplikasi |
+| **MW-ORM** | Mesin relasional dan fondasi data modular |
+| **Applications** | Produk independen di atas kontrak bersama |
 
-Untuk memahami lebih dalam cara kerja Loco, termasuk panduan terperinci, contoh, dan referensi API, kunjungi [situs dokumentasi kami](https://loco.rs).
+Setiap aplikasi tetap bertanggung jawab atas pengalaman pengguna, kebijakan, dan keputusan domainnya.
 
-## Fitur Loco
+## Arsitektur dan batas tanggung jawab
 
-* `Convention Over Configuration:` Seperti Ruby on Rails, Loco menekankan kesederhanaan dan produktivitas dengan mengurangi kebutuhan akan kode boilerplate. Loco menggunakan default yang masuk akal, sehingga developer dapat berfokus pada penulisan logika bisnis alih-alih menghabiskan waktu untuk konfigurasi.
-
-* `Rapid Development:` Untuk mendorong produktivitas developer yang tinggi, desain Loco berfokus pada pengurangan kode boilerplate dan penyediaan API yang intuitif, sehingga developer dapat melakukan iterasi dengan cepat dan membangun prototipe dengan upaya minimal.
-
-* `ORM Integration:` Modelkan bisnis Anda dengan entitas yang kuat tanpa perlu menulis SQL. Definisikan relasi, validasi, dan logika kustom langsung pada entitas Anda untuk meningkatkan kemudahan pemeliharaan dan skalabilitas.
-
-* `Controllers`: Menangani parameter request web, body, validasi, dan merender response yang sesuai dengan konten. Kami menggunakan Axum untuk mendapatkan performa, kesederhanaan, dan ekstensibilitas terbaik. Controllers juga memungkinkan Anda membangun middleware dengan mudah untuk menambahkan logika seperti autentikasi, logging, atau penanganan error sebelum request diteruskan ke action controller utama.
-
-* `Views:` Loco dapat terintegrasi dengan templating engine untuk menghasilkan konten HTML dinamis dari template.
-
-* `Background Jobs:` Menjalankan job yang intensif dalam komputasi atau I/O di background dengan queue berbasis Redis atau menggunakan thread. Mengimplementasikan worker cukup dengan mengimplementasikan fungsi `perform` untuk trait `Worker`.
-
-* `Scheduler:` Menyederhanakan sistem crontab tradisional yang sering kali rumit, sehingga penjadwalan task atau shell script menjadi lebih mudah dan elegan.
-
-* `Mailers:` Mailer akan mengirim email di background menggunakan infrastruktur background worker Loco yang sudah ada. Semuanya akan berjalan mulus untuk Anda.
-
-* `Storage:` Di Loco Storage, kami memudahkan pengelolaan file melalui berbagai operasi. Storage dapat berada di memori, di disk, atau menggunakan layanan cloud seperti AWS S3, GCP, dan Azure.
-
-* `Cache:` Loco menyediakan layer cache untuk meningkatkan performa aplikasi dengan menyimpan data yang sering diakses.
-
-Untuk melihat lebih banyak fitur Loco, kunjungi [situs dokumentasi kami](https://loco.rs/docs/getting-started/tour/).
-
-## Memulai
-<!-- <snip id="quick-installation-command" inject_from="yaml" template="sh"> -->
-```sh
-cargo install loco
-cargo install sea-orm-cli # Only when DB is needed
+```text
+Aplikasi MoonWitness
+         |
+         v
+      MW-BAAS
+ API · Identity · Access
+ Jobs · Storage · Cache
+ Notifications · Operations
+         |
+         v
+ Integrasi MW-ORM
+ Relational core · Entities
+ Relations · Queries · Transactions
+ Kontrak modul (sesuai implementasi)
+         |
+         v
+ PostgreSQL · MySQL · SQLite
 ```
-<!-- </snip> -->
 
-Sekarang Anda dapat membuat aplikasi baru (pilih aplikasi "`SaaS`").
+**Arah dependensi:** MW-BAAS menggunakan MW-ORM. MW-ORM harus tetap dapat digunakan mandiri dan tidak boleh bergantung pada logika produk BAAS.
 
-<!-- <snip id="loco-cli-new-from-template" inject_from="yaml" template="sh"> -->
-```sh
-❯ loco new
-✔ ❯ App name? · myapp
-✔ ❯ What would you like to build? · Saas App with client side rendering
-✔ ❯ Select a DB Provider · Sqlite
-✔ ❯ Select your background worker type · Async (in-process tokio async tasks)
+- **MW-ORM memiliki** primitif relasional, metadata entitas/relasi, persistence, transaksi, dan kontrak modul/add-on generik sesuai implementasi.
+- **MW-BAAS memiliki** kapabilitas backend, komposisi API, kebijakan identitas dan otorisasi, alur kerja tenant, integrasi, dan deployment.
+- **Aplikasi memiliki** aturan domain dan kebijakan data spesifik produk.
 
-🚂 Loco app generated successfully in:
-myapp/
+Setiap schema, riwayat migrasi, dan batas transaksi harus memiliki satu pemilik otoritatif. Jangan menjalankan dua ORM sebagai pemilik yang saling bersaing atas keadaan database yang sama.
 
-- assets: You've selected `clientside` for your asset serving configuration.
+## Hubungan dengan MW-ORM
 
-Next step, build your frontend:
-  $ cd frontend/
-  $ npm install && npm run build
-```
-<!-- </snip> -->
+MW-ORM berkembang secara independen dari codebase SeaORM 2.0. Arsitekturnya menjelaskan target platform modular yang terdiri dari ORM Core, Module Kernel, dan Add-ons opsional. Manifest modul, resolver, lifecycle coordinator, dan ekosistem add-on belum boleh dianggap sebagai fitur tersedia sebelum implementasi dan pengujian selesai.
 
-Sekarang jalankan `cd` ke `myapp` dan mulai aplikasi Anda:
-<!-- <snip id="starting-the-server-command-with-output" inject_from="yaml" template="sh"> -->
-```sh
-$ cargo loco start
+Strategi integrasi MW-BAAS dilakukan bertahap:
 
-                      ▄     ▀
-                                ▀  ▄
-                  ▄       ▀     ▄  ▄ ▄▀
-                                    ▄ ▀▄▄
-                        ▄     ▀    ▀  ▀▄▀█▄
-                                          ▀█▄
-▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄   ▄▄▄▄▄▄▄▄▄▄▄ ▄▄▄▄▄▄▄▄▄ ▀▀█
-██████  █████   ███ █████   ███ █████   ███ ▀█
-██████  █████   ███ █████   ▀▀▀ █████   ███ ▄█▄
-██████  █████   ███ █████       █████   ███ ████▄
-██████  █████   ███ █████   ▄▄▄ █████   ███ █████
-██████  █████   ███  ████   ███ █████   ███ ████▀
-  ▀▀▀██▄ ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀ ██▀
-      ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
-                https://loco.rs
+1. Pertahankan adapter database yang berjalan sambil mengaudit kompatibilitas.
+2. Tetapkan batas integrasi yang sempit dan berversi; jangan masukkan logika BAAS ke ORM core.
+3. Integrasikan MW-ORM melalui adapter eksplisit dan tes kompatibilitas.
+4. Pindahkan kepemilikan model dan migrasi setelah pembuktian end-to-end.
+5. Hapus jalur persistence duplikat setelah aplikasi konsumen lulus gerbang migrasi dan kompatibilitas.
 
-listening on port 5150
-```
-<!-- </snip> -->
+Baca [Kontrak Integrasi MW-ORM](docs/architecture/MW-ORM-INTEGRATION.md) dan [Narasi Branding MW-BAAS](docs/brand/BRAND.md).
 
-## Didukung oleh Loco
+## Status implementasi saat ini
 
-* [SpectralOps](https://spectralops.io) - berbagai layanan yang didukung oleh framework Loco
-* [Nativish](https://nativi.sh) - backend aplikasi yang didukung oleh framework Loco
+Repositori ini saat ini berisi codebase framework Rust turunan Loco. Metadata paket dan integrasi database masih mengidentifikasi Loco dan SeaORM. Identitas MW-BAAS dan integrasi MW-ORM merupakan arah pengembangan—bukan bukti bahwa penggantian nama paket atau adapter MW-ORM siap produksi telah selesai.
 
-## Kontributor ✨
+| Area | Status |
+|---|---|
+| Narasi produk dan batas tanggung jawab | Terdokumentasi |
+| Kontrak integrasi MW-ORM | Terdokumentasi; implementasi menunggu |
+| Fondasi HTTP/backend saat ini | Ada; perlu audit khusus MW-BAAS |
+| Migrasi identitas paket/crate | Belum dimulai; sensitif terhadap kompatibilitas |
+| Adapter MW-ORM dan tes kompatibilitas | Belum terbukti |
+| Kesiapan produksi | Tidak diklaim |
 
-Terima kasih kepada orang-orang luar biasa berikut:
+## Prinsip desain
 
-<a href="https://github.com/loco-rs/loco/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=loco-rs/loco" />
-</a>
+1. **Satu otoritas data** — satu pemilik kanonis untuk schema, migrasi, dan transaksi.
+2. **Kontrak eksplisit** — API berversi antara ORM, backend, dan aplikasi.
+3. **Modular melalui komposisi** — kapabilitas opsional tidak menjadi dependensi wajib.
+4. **Akuntabilitas manusia** — jaga provenance dan auditability untuk catatan atau riset yang memerlukannya.
+5. **Privasi dan persetujuan** — kumpulkan dan tampilkan hanya data yang berhak ditangani.
+6. **Aman sejak awal** — default deny, validasi input, isolasi tenant, dan tes jalur bypass.
+7. **Operasional teramati** — log, metrik, trace, health check, dan diagnostik.
+8. **Klaim yang jujur** — bedakan implementasi dari proposal dan roadmap.
+
+## Roadmap dan gerbang penerimaan
+
+- **Fondasi:** audit repositori, lisensi, dependensi, dan CI.
+- **Identitas:** konsistensi nama MW-BAAS, dokumentasi, dan rencana migrasi paket.
+- **Jembatan ORM:** revisi MW-ORM yang dipatok, adapter, matriks fitur, dan tes kompatibilitas.
+- **Modul layanan:** API, identity/access, storage, jobs, events, notifications, kebijakan tenant.
+- **Aplikasi referensi:** demonstrasi aplikasi nyata yang menggunakan MW-BAAS dan MW-ORM bersama.
+- **Kesiapan rilis:** tinjauan keamanan, simulasi migrasi, dokumentasi operasional, dan CI reproducible.
+
+Milestone hanya selesai jika tes penerimaan dan bukti tersedia. README atau diagram saja bukan bukti implementasi.
+
+## Pengembangan
+
+Repositori ini sedang bertransisi dari fondasi turunan Loco menuju MW-BAAS. Sampai migrasi paket selesai, gunakan workspace Rust dan panduan pengembangan yang ada sebelum mengubah internal framework. Jangan mengganti nama crate, dependensi ORM, atau kepemilikan migrasi hanya sebagai perubahan branding.
+
+## Referensi
+
+- [Visi MoonWitness XV](https://github.com/bjo163/moonwitnessxv/blob/main/docs/vision/MASTER_VISION_NARRATIVE_XV.md)
+- [Repositori MW-ORM](https://github.com/BRIDGE-ALLAH/MW-ORM)
+- [Arsitektur MW-ORM](https://github.com/BRIDGE-ALLAH/MW-ORM/blob/master/docs/ARCHITECTURE.md)
+- [Blueprint implementasi MW-ORM](https://github.com/BRIDGE-ALLAH/MW-ORM/blob/master/docs/BLUEPRINT.md)
+- [Kontrak integrasi](docs/architecture/MW-ORM-INTEGRATION.md)
+- [Narasi branding](docs/brand/BRAND.md)
+
+---
+**MW-BAAS — One Foundation. Many Applications. Accountable by Design.**
