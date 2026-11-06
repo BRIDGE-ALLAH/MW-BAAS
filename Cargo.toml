@@ -118,7 +118,7 @@ compression-full = ["compression", "tower-http/compression-full"]
 # Explicit tenant scoping for Sea-ORM models and queries.
 multi-tenancy = ["with-db"]
 # Opt-in MoonWitness typed module lifecycle and extension runtime.
-moonwitness-modules = ["with-db", "dep:moonwitness-module"]
+moonwitness-modules = ["with-db", "dep:moonwitness-module", "tokio/sync"]
 # Storage features
 all_storage = ["storage_aws_s3", "storage_azure", "storage_gcp"]
 # The local and in-memory drivers are plain tokio; OpenDAL comes in only for
@@ -174,7 +174,7 @@ sea-orm = { version = "2.0", features = [
     "macros",
 ], optional = true }
 
-tokio = { version = "1.45", default-features = false, features = ["fs", "signal", "time", "sync"] }
+tokio = { version = "1.45", default-features = false, features = ["fs", "signal", "time"] }
 tokio-util = { version = "0.7", features = ["io"] }
 # the rest
 
