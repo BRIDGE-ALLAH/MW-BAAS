@@ -6,6 +6,7 @@ on:
       - "Cargo.toml"
       - "src/modules.rs"
       - "src/app.rs"
+      - "src/boot.rs"
       - "src/lib.rs"
       - ".github/workflows/moonwitness-modules.yml"
   pull_request:
