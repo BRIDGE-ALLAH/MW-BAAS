@@ -58,6 +58,8 @@ pub mod mailer;
 pub mod notifications;
 pub mod scheduler;
 pub mod task;
+#[cfg(feature = "with-db")]
+pub mod tenant;
 #[cfg(feature = "testing-core")]
 pub mod testing;
 #[cfg(feature = "testing-core")]
