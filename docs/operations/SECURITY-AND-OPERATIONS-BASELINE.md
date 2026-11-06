@@ -15,14 +15,13 @@ This document records minimum controls for applications built on MW-BAAS. It is 
 - Production modules must be statically reviewed and version-pinned. The current module kernel does not load arbitrary dynamic libraries.
 - Destructive schema changes require review, a tested backup, and an operator-approved execution plan.
 
-## Tenant isolation: release blocker
+## Tenant isolation: separate database per tenant
 
-No tenant isolation mode is selected by this baseline. The following alternatives require an explicit product and operations decision:
+**Decision accepted:** MW-BAAS uses a separate database per tenant. See [ADR 0001 — Tenant Database per Tenant](../architecture/adr/0001-tenant-database-per-tenant.md).
 
-1. **Shared database with row-level scoping / database-enforced row-level security:** lower infrastructure overhead, but every access path must preserve scope and each supported database needs a tested enforcement strategy.
-2. **Database or schema per tenant:** stronger physical/logical separation, but increases provisioning, migration orchestration, connection management, backup, and observability complexity.
+This is an architecture decision, not evidence that tenant isolation is already implemented. The required control plane, tenant registry, scoped connection provider, per-tenant credentials, provisioning, and migration orchestration remain implementation gates.
 
-Do not enable multi-tenant production workloads until an ADR selects the model and tests prove isolation for:
+Do not enable multi-tenant production workloads until tests prove isolation for:
 - ordinary queries and mutations;
 - eager/lazy relations, joins, aggregates, and pagination;
 - raw SQL and custom repositories;
@@ -32,9 +31,9 @@ Do not enable multi-tenant production workloads until an ADR selects the model a
 - admin, support, impersonation, and break-glass paths;
 - migrations, restore, and tenant offboarding.
 
-Negative tests must demonstrate that an actor from tenant A cannot read, mutate, infer, export, or administer tenant B data. Tests must include missing tenant context and stale/reused pooled connections.
+For the selected database-per-tenant model, negative tests must demonstrate that an actor from tenant A cannot read, mutate, infer, export, or administer tenant B data; tenant A credentials cannot connect to tenant B's database; and concurrent requests cannot exchange tenant-bound connections. Tests must include missing or stale tenant context, failed registry/secret resolution, and pool reuse.
 
-Until those gates pass, treat `multi-tenancy` as a compatibility feature alias only, not a security capability.
+The `multi-tenancy` Cargo feature remains a compatibility alias only, not a security capability. Do not enable multi-tenant production workloads until the ADR rollout gates pass.
 
 ## Audit and data governance: policy decisions pending
 
@@ -96,7 +95,8 @@ Logs must avoid passwords, tokens, secret values, and unnecessary sensitive payl
 
 ## Release gates
 
-- [ ] Tenant isolation architecture ADR approved.
+- [x] Tenant isolation architecture ADR approved: database per tenant.
+- [ ] Tenant registry, scoped connection provider, and per-tenant credentials implemented and reviewed.
 - [ ] Cross-tenant negative tests pass across all access surfaces.
 - [ ] Audit, consent, and retention policies approved by application owners.
 - [ ] Database migration and rollback/recovery rehearsal passes.
@@ -106,4 +106,4 @@ Logs must avoid passwords, tokens, secret values, and unnecessary sensitive payl
 
 ## Current implementation boundary
 
-The MW-BAAS ↔ MW-ORM integration is still under review. This document does not claim that tenant isolation, audit policy enforcement, migration compatibility, or production operations have already been implemented or validated.
+The MW-BAAS ↔ MW-ORM integration is still under review. The database-per-tenant architecture is approved, but this document does not claim that tenant isolation, tenant provisioning, scoped connection routing, audit policy enforcement, migration compatibility, or production operations have already been implemented or validated.
