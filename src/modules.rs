@@ -49,6 +49,9 @@ impl Initializer for ModulesInitializer {
     fn name(&self) -> String { "moonwitness-modules".to_owned() }
 
     async fn before_run(&self, app_context: &AppContext) -> Result<()> {
+        if app_context.shared_store.contains::<Arc<tokio::sync::Mutex<AsyncModuleHost>>>() {
+            return Err(Error::string("MoonWitness module runtime is already registered"));
+        }
         let registry = {
             let mut registry = self.registry.lock()
                 .map_err(|_| Error::string("MoonWitness module registry lock is poisoned"))?;
